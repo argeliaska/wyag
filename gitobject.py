@@ -1,4 +1,6 @@
 class GitObject(object):
+    # Almost everything, in Git, is stored as an object. 
+    # Commits are objects as well as tags
 
     def __init__(self, data=None):
         if data != None:
@@ -19,4 +21,16 @@ class GitObject(object):
     
     def init(self):
         pass # Just do nothing, this is a reasonable default! 
+
+
+class GitBlob(GitObject):
+    # Blobs are user data: the content of every file you put in git (main.c, logo.png, README.md) 
+    # is stored as a blob. they’re just unspecified data
+    fmt=b'blob'
+
+    def serialize(self):
+        return self.blobdata
+    
+    def deserialize(self, data):
+        self.blobdata = data
 
