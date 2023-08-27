@@ -1,3 +1,5 @@
+from .kvlm import kvlm_parse, kvlm_serialize
+
 class GitObject(object):
     # Almost everything, in Git, is stored as an object. 
     # Commits are objects as well as tags
@@ -34,3 +36,15 @@ class GitBlob(GitObject):
     def deserialize(self, data):
         self.blobdata = data
 
+
+class GitCommit(GitObject):
+    fmt=b'commit'
+
+    def desearialize(self, data):
+        self.kvlm = kvlm_parse(data)
+
+    def serialize(self):
+        return kvlm_serialize(self.kvlm)
+    
+    def init(self):
+        self.kvlm = dict()
