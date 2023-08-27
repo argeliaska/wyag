@@ -13,7 +13,7 @@ import zlib
 
 from .gitrepository import repo_create, repo_find
 from .gitobject_utils import object_read, object_find, object_hash
-
+from .utils import log_graphviz
 
 argparse = argparse.ArgumentParser(description="The stupidest content tracker")
 
@@ -57,6 +57,11 @@ argsp.add_argument("-w",
 argsp.add_argument("path", 
                    help="Read object from <file>")
 
+argsp = argsubparsers.add_parser("log", help="Display history of a given commit.")
+argsp.add_argument("commit",
+                   default="HEAD",
+                   nargs="?",
+                   help="Commit to start at.")
 
 
 def main(argv=sys.argv[1:]):
@@ -100,3 +105,14 @@ def cmd_hash_object(args):
     with open(args.path, "rb") as fd:
         sha = object_hash(fd, args.type.encode(), repo)
         print(sha)
+
+def cmd_log(args):
+    """ A simpler version of Git log """
+
+    repo = repo_find()
+
+    print("digraph wyaglog{")
+    print("  node[shape=rect]")
+    # we’ll dump Graphviz data and let the user use dot to render the actual log.
+    log_graphviz(repo, object_find(repo, args.commit), set())
+    print("}")
