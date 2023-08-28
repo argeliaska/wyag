@@ -71,3 +71,32 @@ def object_hash(fd, fmt, repo=None):
     else                  : raise Exception("Unknown type %s!" % fmt)
 
     return object_write(obj, repo)
+
+
+def ls_tree(repo, ref, recursive=None, prefix=""):
+    sha = object_find(repo, ref, fmt=b"tree")
+    obj = object_read(repo, sha)
+    for item in obj.items:
+        if len(item.mode) == 5:
+            type = item.mode[0:1]
+        else:
+            type = item.mode[0:2]
+
+        # Determine the type.
+        if   type == b'04'   : type = "tree"
+        elif type == b'10'   : type = "blob" # A regular file.
+        elif type == b'12'   : type = "blob" # A symlink. Blob contents is link target.
+        elif type == b'16'   : type = "commit" # A submodule
+        else                 : raise Exception("Weird tree leaf mode {}".format(item.mode))
+
+        if not (recursive and type=='tree'): # This is a leaf
+            print("{0} {1} {2}\t{3}".format(
+                "0" * (6 - len(item.mode)) + item.mode.decode("ascii"),
+                # Git's ls-tree displays the type
+                # of the object pointed to.  We can do that too :)
+                type,
+                item.sha, 
+                os.path.join(prefix, item.path)
+            ))
+        else: # This is a branch, recurse
+            ls_tree(repo, item.sha, recursive, os.path.join(prefix, item.path))
