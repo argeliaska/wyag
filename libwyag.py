@@ -12,7 +12,7 @@ import sys
 import zlib
 
 from .gitrepository import repo_create, repo_find
-from .gitobject_utils import object_read, object_find, object_hash, ls_tree, ref_list, show_ref
+from .gitobject_utils import object_read, object_find, object_hash, ls_tree, ref_list, show_ref, tag_create
 from .utils import log_graphviz
 
 argparse = argparse.ArgumentParser(description="The stupidest content tracker")
@@ -94,6 +94,19 @@ argsp.add_argument("path",
 # SHOW-REF
 argsp = argsubparsers.add_parser("show-ref", help="List references.")
 
+# TAG
+argsp = argsubparsers.add_parser("tag", help="List and create tags")
+argsp.add_argument("-a",
+                   action="store_true",
+                   dest="create_tag_object",
+                   help="Wheter to create a tag object")
+argsp.add_argument("name", 
+                   nargs="?",
+                   help="The new tag's name")
+argsp.add_argument("object",
+                   default="HEAD",
+                   nargs="?",
+                   help="The object the new tag will point to")
 
 def main(argv=sys.argv[1:]):
     args = argparse.parse_args(argv)
@@ -189,3 +202,16 @@ def cmd_show_ref(args):
     repo = repo_find()
     refs = ref_list(repo)
     show_ref(repo, refs, prefix="refs")
+
+
+def cmd_tag(args):
+    repo = repo_find()
+
+    if args.name:
+        tag_create(repo, 
+                   args.name, 
+                   args.object,
+                   type="object" if args.create_tag_object else "ref")
+    else:
+        refs = ref_list(repo)
+        show_ref(repo, refs["tags"], with_hash=False)
