@@ -12,7 +12,7 @@ import sys
 import zlib
 
 from .gitrepository import repo_create, repo_find
-from .gitobject_utils import object_read, object_find, object_hash, ls_tree
+from .gitobject_utils import object_read, object_find, object_hash, ls_tree, ref_list, show_ref
 from .utils import log_graphviz
 
 argparse = argparse.ArgumentParser(description="The stupidest content tracker")
@@ -91,6 +91,8 @@ argsp.add_argument("commit",
 argsp.add_argument("path", 
                    help="The EMPTY directory to checkout on.")
 
+# SHOW-REF
+argsp = argsubparsers.add_parser("show-ref", help="List references.")
 
 
 def main(argv=sys.argv[1:]):
@@ -108,7 +110,7 @@ def main(argv=sys.argv[1:]):
     elif args.command == "rebase"       : pass
     elif args.command == "rev-parse"    : pass
     elif args.command == "rm"           : pass
-    elif args.command == "show-ref"     : pass
+    elif args.command == "show-ref"     : cmd_show_ref(args)
     elif args.command == "status"       : pass
     elif args.command == "tag"          : pass
     else                                : print("Bad command.")
@@ -183,3 +185,7 @@ def tree_checkout(repo, tree, path):
             with open(dest, 'wb') as f:
                 f.write(obj.blobdata)
 
+def cmd_show_ref(args):
+    repo = repo_find()
+    refs = ref_list(repo)
+    show_ref(repo, refs, prefix="refs")
