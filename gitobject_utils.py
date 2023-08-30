@@ -39,7 +39,44 @@ def object_read(repo, sha):
         return c(raw[y+1:])
     
 def object_find(repo, name, fmt=None, follow=True):
-    return name    
+    # If we have a tag and fmt is anything else, we follow the tag.
+    # If we have a commit and fmt is tree, we return this commit’s tree object
+    # In all other situations, we bail out: nothing else makes sense.
+
+    sha = object_resolve(repo, name)
+
+    if not sha:
+        raise Exception("No such reference {0}.".format(name))
+
+    if len(sha) > 1:
+        raise Exception("Ambiguos reference {0}: Candidates are:\n - {1}.".format(name, "\n - ".join(sha)))
+
+    sha = sha[0]
+
+    if not fmt:
+        return sha
+    
+    while True:
+        obj = object_read(repo, sha)
+        # ^^^^^^^^ < this is a bit agressive: we're reading
+        # the full object just to get its type. And we're doing
+        # that in a loop, albeit normally short. Don't expect 
+        # high performance here.
+
+        if obj.fmt == fmt:
+            return sha
+        
+        if not follow:
+            return None
+        
+        # Follow tags
+        if obj.fmt == b'tag':
+            sha = obj.kvlm[b'object'].decode("ascii")
+        elif obj.fmt == b'commit' and fmt == b'tree':
+            sha = obj.kvlm[b'tree'].decode("ascii")
+        else:
+            return None
+        
     
 def object_write(obj, repo=None):
     # Serialize object data
@@ -76,6 +113,12 @@ def object_hash(fd, fmt, repo=None):
 
 
 def object_resolve(repo, name):
+    # This name resolution function will work like this:
+    # If name is HEAD, it will just resolve .git/HEAD;
+    # If name is a full hash, this hash is returned unmodified.
+    # If name looks like a short hash, it will collect objects whose full hash begin with this short hash.
+    # At last, it will resolve tags and branches matching name.
+    #     
     """Resolve name to an object hash in repo.
     
     This function is aware of:
