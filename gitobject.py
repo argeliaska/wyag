@@ -125,3 +125,9 @@ class GitTree(GitObject):
     
     def init(self):
         self.items = list()
+
+    
+class GitTag(GitCommit):
+    # A tag is just a user-defined name for an object, often a commit.
+    # A very common use of tags is identifying software releases
+    fmt = b'tag'
