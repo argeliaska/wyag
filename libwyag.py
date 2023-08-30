@@ -113,19 +113,20 @@ def main(argv=sys.argv[1:]):
     if   args.command == "add"          : pass
     elif args.command == "cat-file"     : cmd_cat_file(args)
     elif args.command == "check-ignore" : pass
-    elif args.command == "checkout"     : pass
+    elif args.command == "checkout"     : cmd_checkout(args)
     elif args.command == "commit"       : pass
     elif args.command == "hash-object"  : cmd_hash_object(args)
     elif args.command == "init"         : cmd_init(args)
-    elif args.command == "log"          : pass
+    elif args.command == "log"          : cmd_log(args)
     elif args.command == "ls-files"     : pass
+    elif args.command == "ls-tree"      : cmd_ls_tree(args)
     elif args.command == "merge"        : pass
     elif args.command == "rebase"       : pass
     elif args.command == "rev-parse"    : pass
     elif args.command == "rm"           : pass
     elif args.command == "show-ref"     : cmd_show_ref(args)
     elif args.command == "status"       : pass
-    elif args.command == "tag"          : pass
+    elif args.command == "tag"          : cmd_tag(args)
     else                                : print("Bad command.")
 
 
