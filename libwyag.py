@@ -108,6 +108,19 @@ argsp.add_argument("object",
                    nargs="?",
                    help="The object the new tag will point to")
 
+# REV-PARSE
+argsp = argsubparsers.add_parser("rev-parse", help="Parse revision (or other objects) identifiers")
+argsp.add_argument("--wayg-type",
+                   metavar="type",
+                   dest="type",
+                   choices=["blob", "commit", "tag", "tree"],
+                   default=None,
+                   help="Specify the expected type")
+argsp.add_argument("name",
+                   help="The name to parse")
+
+
+
 def main(argv=sys.argv[1:]):
     args = argparse.parse_args(argv)
     if   args.command == "add"          : pass
@@ -122,7 +135,7 @@ def main(argv=sys.argv[1:]):
     elif args.command == "ls-tree"      : cmd_ls_tree(args)
     elif args.command == "merge"        : pass
     elif args.command == "rebase"       : pass
-    elif args.command == "rev-parse"    : pass
+    elif args.command == "rev-parse"    : cmd_rev_parse(args)
     elif args.command == "rm"           : pass
     elif args.command == "show-ref"     : cmd_show_ref(args)
     elif args.command == "status"       : pass
@@ -216,3 +229,15 @@ def cmd_tag(args):
     else:
         refs = ref_list(repo)
         show_ref(repo, refs["tags"], with_hash=False)
+
+
+def cmd_rev_parse(args):
+    # We’re going to clone only one use cases of the rev-parse command: solving references
+    if args.type:
+        fmt = args.type.encode()
+    else:
+        fmt = None
+
+    repo = repo_find()
+
+    print(object_find(repo, args.name, fmt, follow=True))
