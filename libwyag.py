@@ -73,17 +73,6 @@ argsp.add_argument("-r",
 argsp.add_argument("tree", 
                    help="A tree-ish object")
 
-
-# LS-TREE
-argsp = argsubparsers.add_parser("ls-tree", help="Pretty-print a tree object.")
-argsp.add_argument("-r", 
-                   dest="recursive", 
-                   action="store_true",
-                   help="Recurse into sub-trees")
-
-argsp.add_argument("tree", 
-                   help="A tree-ish object")
-
 # CHECKOUT
 argsp = argsubparsers.add_parser("checkout", help="Checkout a commit inside of a directory.")
 argsp.add_argument("commit", 
