@@ -131,3 +131,35 @@ class GitTag(GitCommit):
     # A tag is just a user-defined name for an object, often a commit.
     # A very common use of tags is identifying software releases
     fmt = b'tag'
+
+
+class GitIndexEntry(object):
+    def __init__(self, ctime=None, mtime=None, dev=None, ino=None,
+                 mode_type=None, mode_perms=None, uid=None, gid=None,
+                 fsize=None, sha=None, flag_assume_valid=None, 
+                 flag_stage=None, name=None):
+        # The last time a file's metadata changed. This is a pair
+        # (timestamp in seconds, nanoseconds)
+        self.ctime = ctime
+        # The last time a file's data changed. This is a pair
+        # (timestamp in seconds, nanoseconds)
+        self.mtime = mtime
+        # The ID of devide containing this file
+        self.dev = dev
+        # The file's inode number
+        self.ino = ino
+        # The object type, either b1000 (regular), b1010 (symlink),
+        # b1110 (gitlink).
+        self.mode_type = mode_perms
+        # User ID of owner
+        self.uid = uid
+        # Group ID of owner
+        self.gid = gid
+        # Size of this object, in bytes
+        self.fsize = fsize
+        # The object's SHA
+        self.sha = sha
+        self.flag_assume_valid = flag_assume_valid
+        self.flag_stage = flag_stage
+        # Name of the object (full path this time!
+        self.name = name
