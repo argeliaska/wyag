@@ -125,7 +125,7 @@ def main(argv=sys.argv[1:]):
     elif args.command == "hash-object"  : cmd_hash_object(args)
     elif args.command == "init"         : cmd_init(args)
     elif args.command == "log"          : cmd_log(args)
-    elif args.command == "ls-files"     : pass
+    elif args.command == "ls-files"     : cmd_ls_files(args)
     elif args.command == "ls-tree"      : cmd_ls_tree(args)
     elif args.command == "merge"        : pass
     elif args.command == "rebase"       : pass
