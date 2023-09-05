@@ -1,3 +1,4 @@
+from fnmatch import fnmatch
 import os
 import re
 import zlib
