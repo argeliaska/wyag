@@ -13,7 +13,8 @@ import zlib
 
 from .gitrepository import repo_create, repo_find
 from .gitobject_utils import object_read, object_find, object_hash, ls_tree, \
-                             ref_list, show_ref, tag_create, index_read
+                             ref_list, show_ref, tag_create, index_read, \
+                             gitignore_read, check_ignore
 from .utils import log_graphviz
 
 argparse = argparse.ArgumentParser(description="The stupidest content tracker")
@@ -110,16 +111,20 @@ argsp.add_argument("name",
                    help="The name to parse")
 
 
+# LS-FILES
 argsp = argsubparsers.add_parser("ls-files", help="List all the stage files")
 argsp.add_argument("--verbose", action="store_true", help="Show everything.")
 
+# CHECK-IGNORE
+argsp = argsubparsers.add_parser("check-ignore", help="Check path(s) against ignore rules.")
+argsp.add_argument("path", nargs="+", help="Paths to check")
 
 
 def main(argv=sys.argv[1:]):
     args = argparse.parse_args(argv)
     if   args.command == "add"          : pass
     elif args.command == "cat-file"     : cmd_cat_file(args)
-    elif args.command == "check-ignore" : pass
+    elif args.command == "check-ignore" : cmd_check_ignore(args)
     elif args.command == "checkout"     : cmd_checkout(args)
     elif args.command == "commit"       : pass
     elif args.command == "hash-object"  : cmd_hash_object(args)
@@ -265,3 +270,11 @@ def cmd_ls_files(args):
             print("  flags: stage={} assume_valid={}".format(
                 e.flag_stage,
                 e.flag_assume_valid))
+            
+
+def cmd_check_ignore(args):
+    repo = repo_find()
+    rules = gitignore_read(repo)
+    for path in args.path:
+        if check_ignore(rules, path):
+            print(path)
