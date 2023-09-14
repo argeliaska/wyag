@@ -8,7 +8,7 @@ from .gitrepository import repo_create, repo_find
 from .gitobject_utils import object_read, object_find, object_hash, ls_tree, \
                              ref_list, show_ref, tag_create, index_read, \
                              gitignore_read, check_ignore
-from .utils import log_graphviz, branch_get_active
+from .utils import log_graphviz, branch_get_active, tree_to_dict, rm
 
 argparse = argparse.ArgumentParser(description="The stupidest content tracker")
 
@@ -114,6 +114,10 @@ argsp.add_argument("path", nargs="+", help="Paths to check")
 
 # STATUS
 argsp = argsubparsers.add_parser("status", help="Show the working tree status.")
+
+# RM
+argsp = argsubparsers.add_parser("rm", help="Remove files from the working tree and the index.")
+argsp.add_argument("path", nargs="+", help="Files to remove")
 
 def main(argv=sys.argv[1:]):
     args = argparse.parse_args(argv)
@@ -366,3 +370,8 @@ def cmd_status_index_worktree(repo, index):
             # its name without its contents.
             if not check_ignore(ignore, f):
                 print(" ", f)
+
+
+def cmd_rm(args):
+    repo = repo_find()
+    rm(repo, args.path)

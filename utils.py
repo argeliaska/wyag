@@ -1,6 +1,6 @@
 # https://dreampuf.github.io/GraphvizOnline/
 import os
-from gitobject_utils import object_read, repo_file, object_find
+from gitobject_utils import object_read, repo_file, object_find, index_read, index_write
 
 def log_graphviz(repo, sha, seen):
 
@@ -66,3 +66,41 @@ def tree_to_dict(repo, ref, prefix=""):
             ret[full_path] = leaf.sha
 
     return ret
+
+
+def rm(repo, paths, delete=True, skip_missing=False):
+    # Find and read the index
+    index = index_read(repo)
+
+    worktree = repo.worktree + os.sep
+
+    # Make paths absolute
+    abspaths = list()
+    for path in paths:
+        abspath = os.path.abspath(path)
+        if abspaths.startswith(worktree):
+            abspaths.append(abspath)
+        else:
+            raise Exception("Cannot remove paths outside of worktree: {}".format(paths))
+
+    kept_entries = list()
+    remove = list()
+
+    for e in index.entries:
+        full_path = os.path.join(repo.worktree, e.name)
+
+        if full_path in abspaths:
+            remove.append(full_path)
+            abspaths.remove(full_path)
+        else:
+            kept_entries.append(e) # Preserve entry
+
+        if len(abspaths) > 0 and not skip_missing:
+            raise Exception("Cannot remove paths not in the index: {}".format(abspaths))
+        
+        if delete:
+            for path in remove:
+                os.unlink(path)
+
+        index.entries = kept_entries
+        index_write(repo, index)
