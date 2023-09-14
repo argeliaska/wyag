@@ -1,5 +1,6 @@
 # https://dreampuf.github.io/GraphvizOnline/
-from gitobject_utils import object_read
+import os
+from gitobject_utils import object_read, repo_file, object_find
 
 def log_graphviz(repo, sha, seen):
 
@@ -32,3 +33,36 @@ def log_graphviz(repo, sha, seen):
         p = p.decode("ascii")
         print("  c_{0} -> c_{1};".format(sha, p))
         log_graphviz(repo, p, seen)
+
+def branch_get_active(repo):
+    with open(repo_file(repo, "HEAD"), "r") as f:
+        head = f.read()
+
+    if head.startswith("ref: refs/heads/"):
+        return (head[16:-1])
+    else:
+        return False
+    
+
+def tree_to_dict(repo, ref, prefix=""):
+    ret = dict()
+    tree_sha = object_find(repo, ref, fmt=b"tree")
+    tree = object_read(repo, tree_sha)
+
+    for leaf in tree.items:
+        full_path = os.path.join(prefix, leaf.path)
+
+        # We read the object to extract its type (this is uselessly
+        # expensive: we could just open it as a file an read the 
+        # first few bytes)
+        is_subtree = leaf.mode.startswith(b'04')
+
+        # Depending on the type, we either store the path (if it's a 
+        # blob, so a regular file), or recurse (if it's a another tree,
+        # so a subdir)
+        if is_subtree:
+            ret.update(tree_to_dict(repo, leaf.sha, full_path))
+        else:
+            ret[full_path] = leaf.sha
+
+    return ret
