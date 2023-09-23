@@ -8,7 +8,7 @@ from .gitrepository import repo_create, repo_find
 from .gitobject_utils import object_read, object_find, object_hash, ls_tree, \
                              ref_list, show_ref, tag_create, index_read, \
                              gitignore_read, check_ignore
-from .utils import log_graphviz, branch_get_active, tree_to_dict, rm
+from .utils import log_graphviz, branch_get_active, tree_to_dict, rm, add
 
 argparse = argparse.ArgumentParser(description="The stupidest content tracker")
 
@@ -119,9 +119,13 @@ argsp = argsubparsers.add_parser("status", help="Show the working tree status.")
 argsp = argsubparsers.add_parser("rm", help="Remove files from the working tree and the index.")
 argsp.add_argument("path", nargs="+", help="Files to remove")
 
+# ADD
+argsp = argsubparsers.add_parser("add", help="Add files contents to the index.")
+argsp.add_argument("path", nargs="+", help="Files to add")
+
 def main(argv=sys.argv[1:]):
     args = argparse.parse_args(argv)
-    if   args.command == "add"          : pass
+    if   args.command == "add"          : cmd_add(args)
     elif args.command == "cat-file"     : cmd_cat_file(args)
     elif args.command == "check-ignore" : cmd_check_ignore(args)
     elif args.command == "checkout"     : cmd_checkout(args)
@@ -134,7 +138,7 @@ def main(argv=sys.argv[1:]):
     elif args.command == "merge"        : pass
     elif args.command == "rebase"       : pass
     elif args.command == "rev-parse"    : cmd_rev_parse(args)
-    elif args.command == "rm"           : pass
+    elif args.command == "rm"           : cmd_rm(args)
     elif args.command == "show-ref"     : cmd_show_ref(args)
     elif args.command == "status"       : cmd_status(args)
     elif args.command == "tag"          : cmd_tag(args)
@@ -375,3 +379,7 @@ def cmd_status_index_worktree(repo, index):
 def cmd_rm(args):
     repo = repo_find()
     rm(repo, args.path)
+
+def cmd_add(args):
+    repo = repo_find()
+    add(repo, args.path)
