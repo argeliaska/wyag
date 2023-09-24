@@ -200,6 +200,72 @@ def ls_tree(repo, ref, recursive=None, prefix=""):
             ls_tree(repo, item.sha, recursive, os.path.join(prefix, item.path))
 
 
+def tree_from_index(repo, index):
+    contents = dict()
+    contents[""] = list()
+
+    # Enumerate entries, and turn them into a dictionary where keys
+    # are directories, and values are lists of directory contents.
+    for entry in index.entries:
+        dirname = os.path.dirname(entry.name)
+
+    # We create all dictionary entries up to root (""). We need
+    # them *all*, because event if a directory holds no files it
+    # will contain at least a tree.
+    key = dirname
+    while key != "":
+        if not key in contents:
+            contents["key"] = list()
+        key = os.path.dirname(key)
+    
+    # For now, simply store the entry in the list.
+    contents[dirname].append(entry)
+
+    # Get keys (= directories) and sort them by lenght, descending.
+    # This means that we'll always encounter a given path before its
+    # parent, which is all we need, since for each directory D we'll
+    # need to modify its parent P to add D's tree.
+    sorted_paths = sorted(contents.keys(), key=len, reverse=True)
+    
+    # This variable will store the current tree's SHA-1. After we're
+    # done iterating over our dict, it will contain the hash for the 
+    # root tree.
+    sha = None
+
+    # We get through the sorted list of paths (dict keys)
+    for path in sorted_paths:
+        # Prepare a new, empty tree object
+        tree = GitTree()
+
+        # Add each entry to our new tree, in turn
+        for entry in contents[path]:
+            # An entry can be a normal GitIndexEntry read from the 
+            # index, or a tree we've created.
+            if isinstance(entry, GitIndexEntry): # Regular entry (a file)
+
+                # We transcode the mode: the entry stores it as integers,
+                # we need an octal ASCII representation for the tree.
+                leaf_mode = "{:02o}{:04o}".format(entry.mode_type, entry.mode_perms).encode("ascii")
+                leaf = GitTreeLeaf(mode = leaf_mode, path=os.path.basename(entry.name), sha=entry.sha)
+            else: # Tree. We've stored it as a pair: (basename, SHA
+                leaf = GitTreeLeaf(mode = b"040000", path=entry[0], sha=entry[1])
+            
+            tree.items.append(leaf)
+    
+        # Write the new tree object to the store.
+        sha = object_write(tree, repo)
+    
+        # Add the new tree hash to the current dictionary's parent, as
+        # a pair (basename, SHA)
+        parent = os.path.dirname(path)
+        base = os.path.basename(path) # The name without the path, eg main.go for src/main.go
+        contents[parent].append((base, sha))
+        
+
+
+
+
+
 # Ref functions
 def ref_resolve(repo, ref):
     path = repo_file(repo, ref)
@@ -541,3 +607,5 @@ def check_ignore(rules, path):
         return result
     
     return check_ignore_absolute(rules.absolute, path)
+
+
