@@ -1,7 +1,9 @@
 # https://dreampuf.github.io/GraphvizOnline/
 import os
-from gitobject_utils import object_read, repo_file, object_find, index_read, index_write, object_hash
-from gitobject import GitIndexEntry
+import configparser
+from gitobject_utils import object_read, repo_file, object_find, index_read, index_write, object_hash, object_write
+from gitobject import GitIndexEntry, GitCommit
+
 
 def log_graphviz(repo, sha, seen):
 
@@ -151,3 +153,42 @@ def add(repo, paths, delete=True, skip_missing=False):
 
         # Write the index back
         index_write(repo, index)
+
+
+def gitconfig_read():
+    xdg_config_home = os.environ["XDG_CONFIG_HOME"] if "XDG_CONFIG_HOME" in os.environ else "~/.config"
+    configfiles = [
+        os.path.expanduser(os.path.join(xdg_config_home, "git/config")),
+        os.path.expanduser("~/.gitconfig")
+    ]
+
+    config = configparser.ConfigParser()
+    config.read(configfiles)
+    return config
+
+def gitconfig_user_get(config):
+    if "user" in config:
+        if "name" in config["user"] and "email" in config["user"]:
+            return "{} <{}>".format(config["user"]["name"], config["user"]["email"])
+    return None
+
+
+def commit_create(repo, tree, parent, author, timestamp, message):
+    commit = GitCommit() # Create the new commit object.
+    commit.kvlm[b"tree"] = tree.encode("ascii")
+    if parent:
+        commit.kvlm[b"parent"] = parent.encode("ascii")
+
+    # Format timezone
+    offset = int(timestamp.astimezone().utcoffset().total_seconds())
+    hours = offset // 3600
+    minutes = (offset % 3600) // 60
+    tz = "{}{:02}{:02}".format("+" if offset > 0 else "-", hours, minutes)
+
+    author = author + timestamp.strftime(" %s ") + tz
+
+    commit.kvlm[b"author"] = author.encode("utf8")
+    commit.kvlm[b"committer"] = author.encode("utf8")
+    commit.kvlm[None] = message.encode("utf8")
+
+    return object_write(commit, repo)

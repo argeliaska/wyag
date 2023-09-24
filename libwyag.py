@@ -7,8 +7,8 @@ import sys
 from .gitrepository import repo_create, repo_find
 from .gitobject_utils import object_read, object_find, object_hash, ls_tree, \
                              ref_list, show_ref, tag_create, index_read, \
-                             gitignore_read, check_ignore
-from .utils import log_graphviz, branch_get_active, tree_to_dict, rm, add
+                             gitignore_read, check_ignore, tree_from_index, repo_file
+from .utils import log_graphviz, branch_get_active, tree_to_dict, rm, add, commit_create, gitconfig_read, gitconfig_user_get
 
 argparse = argparse.ArgumentParser(description="The stupidest content tracker")
 
@@ -123,13 +123,22 @@ argsp.add_argument("path", nargs="+", help="Files to remove")
 argsp = argsubparsers.add_parser("add", help="Add files contents to the index.")
 argsp.add_argument("path", nargs="+", help="Files to add")
 
+# COMMIT
+argsp = argsubparsers.add_parser("commit", help="Record changes to the repository")
+argsp.add_argument("-m",
+                   metavar="message",
+                   dest="message",
+                   help="Message to associate with this commit.")
+
+
+
 def main(argv=sys.argv[1:]):
     args = argparse.parse_args(argv)
     if   args.command == "add"          : cmd_add(args)
     elif args.command == "cat-file"     : cmd_cat_file(args)
     elif args.command == "check-ignore" : cmd_check_ignore(args)
     elif args.command == "checkout"     : cmd_checkout(args)
-    elif args.command == "commit"       : pass
+    elif args.command == "commit"       : cmd_commit(args)
     elif args.command == "hash-object"  : cmd_hash_object(args)
     elif args.command == "init"         : cmd_init(args)
     elif args.command == "log"          : cmd_log(args)
@@ -383,3 +392,27 @@ def cmd_rm(args):
 def cmd_add(args):
     repo = repo_find()
     add(repo, args.path)
+
+
+def cmd_commit(args):
+    repo = repo_find()
+    index = index_read(repo)
+    # Creates trees, grab back SHA for the root tree.
+    tree = tree_from_index(repo, index)
+
+    # Create the commit object itself
+    commit = commit_create(repo,
+                           tree, 
+                           object_find(repo, "HEAD"),
+                           gitconfig_user_get(gitconfig_read()),
+                           datetime.now(),
+                           args.message)
+
+    # Update HEAD so our commit is now the top of the active branch.
+    active_branch = branch_get_active(repo)
+    if active_branch: # If we're on a branch, we update refs/heads/BRANCH
+        with open(repo_file(repo, os.path.join("refs/heads", active_branch)), "w") as fd:
+            fd.write(commit + "\n")
+    else: # Otherwise, we update HEAD itself.
+        with open(repo_file(repo, "HEAD"), "w") as fd:
+            fd.write("\n")
